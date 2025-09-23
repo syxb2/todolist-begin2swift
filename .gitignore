@@ -1,3 +1,3 @@
-.pbxproj
+*.pbxproj
 .DS_Store
-.xcodeproj
+*.xcodeproj
