@@ -64,6 +64,8 @@ class ToDo: ObservableObject {
         self.ToDoList[id].deleted = true
         self.sort()
         
+        self.count -= 1
+        
         self.dataStore()
     }
     

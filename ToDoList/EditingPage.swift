@@ -38,7 +38,7 @@ struct EditingPage: View {
 //                    }
 //                }
             }
-            .navigationTitle("添加 ToDoList")
+            .navigationTitle("编辑提醒事项")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(content: {
                 ToolbarItem(content: {
