@@ -51,7 +51,7 @@ struct ContentView: View {
                 .toolbar(content: {
                     if self.editingMode {
                         ToolbarItem(content: {
-                            DeleteButton(selection: self.$selection)
+                            DeleteButton(selection: self.$selection, editingMode: self.$editingMode)
                                 .environmentObject(self.UserData) //! 没有这一条就无法在 DeleteButton 中调用 UserData 的方法
                         })
                     }
@@ -112,10 +112,12 @@ struct EditingButton: View {
 struct DeleteButton: View {
     
     @Binding var selection: [Int]
+    @Binding var editingMode: Bool
     @EnvironmentObject var UserData: ToDo // 因为要调用 UserData 里的方法，所以要写一个 EnvironmentObject
     
     var body: some View {
         Button(action: {
+            self.editingMode.toggle()
             for i in self.selection {
                 self.UserData.delete(id: i)
             }
@@ -144,18 +146,36 @@ struct SingleCardView: View {
                 .foregroundColor(.blue)
             
             if self.editingMode {
-                Button(action: {
-                    self.UserData.delete(id: self.index)
-                }, label: {
-                    Image(systemName: "trash")
-                        .imageScale(.large)
-                        .padding(.leading)
-                })
+                Image(systemName: self.selection.firstIndex(where: {$0 == self.index}) == nil ? "circle": "checkmark.circle.fill")
+                    .imageScale(.large) // 图片大小
+                    .padding(.leading)
+                    .onTapGesture { // 点击图片时执行代码
+                        if self.selection.firstIndex(where: { // 数组自带的方法
+                            $0 == self.index // 这是一个闭包，返回的是数组中找到项的位置
+                        }) == nil {
+                            self.selection.append(self.index)
+                        }
+                        else {
+                            self.selection.remove(at: self.selection.firstIndex(where: {
+                                $0 == self.index
+                            })!)
+                        }
+                    }
             }
             
             Button(action: { // 将 SingleCardView 放入一个 button
                 if !self.editingMode {
                     self.showEditingPage = true
+                }
+                else {
+                    if self.selection.firstIndex(where: {$0 == self.index}) == nil {
+                        self.selection.append(self.index)
+                    }
+                    else {
+                        self.selection.remove(at: self.selection.firstIndex(where: {
+                            $0 == self.index
+                        })!)
+                    }
                 }
             }, label: {
                 VStack(alignment: .leading, spacing: 6.0) { // 一般写 Vstack 时括号可以省略，因为参数只有最后一个 content 闭包，而它可以写成大括号内的形式
@@ -185,24 +205,6 @@ struct SingleCardView: View {
                     .padding(.trailing)
                     .onTapGesture { // 点击图片时执行代码
                         self.UserData.check(id: index)
-                    }
-            }
-            else {
-                Image(systemName: self.selection.firstIndex(where: {$0 == self.index}) == nil ? "circle": "checkmark.circle.fill")
-                    .imageScale(.large) // 图片大小
-                    .padding(.trailing)
-                    .padding(.trailing)
-                    .onTapGesture { // 点击图片时执行代码
-                        if self.selection.firstIndex(where: { // 数组自带的方法
-                            $0 == self.index // 这是一个闭包，返回的是数组中找到项的位置
-                        }) == nil {
-                            self.selection.append(self.index)
-                        }
-                        else {
-                            self.selection.remove(at: self.selection.firstIndex(where: {
-                                $0 == self.index
-                            })!)
-                        }
                     }
             }
         }

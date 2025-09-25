@@ -30,6 +30,8 @@ class ToDo: ObservableObject {
     func check(id: Int) {
         self.ToDoList[id].isChecked.toggle()
         self.dataStore()
+        
+        self.sort()
     }
     
     func add(data: SingleToDo) {
@@ -52,9 +54,15 @@ class ToDo: ObservableObject {
     func sort() {
         self.ToDoList.sort(by: {
             (data1: SingleToDo, data2: SingleToDo) in
-                return data1.duedate.timeIntervalSince1970 < data2.duedate.timeIntervalSince1970 // .timeIntervalSince1970 返回 1970 到当前时间的秒数
+            return data1.duedate.timeIntervalSince1970 < data2.duedate.timeIntervalSince1970 // .timeIntervalSince1970 返回 1970 到当前时间的秒数
         })
-        for i in 0..<self.ToDoList.count { // 调整 id
+        self.ToDoList.sort(by: {
+            (data1: SingleToDo, data2: SingleToDo) in
+            return data1.isChecked == false && data2.isChecked == true
+        })
+        
+        // 调整 id
+        for i in 0..<self.ToDoList.count {
             self.ToDoList[i].id = i
         }
     }
