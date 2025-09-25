@@ -6,10 +6,14 @@
 //
 
 import Foundation
+import UserNotifications
 import Combine
 
 var encoder = JSONEncoder()
 var decoder = JSONDecoder()
+
+let notificationContent = UNMutableNotificationContent() // 用于承载通知内容
+// app 本地通知实际是先发给一个统一的分发机构（内容有通知内容以及此通知计划发送的时间），再由分发机构在合适的时间发出通知（因为 app 不运行时，是不会执行发送通知的代码的）
 
 // 对数据的操作类 -> 方便管理数据
 class ToDo: ObservableObject {
@@ -40,15 +44,36 @@ class ToDo: ObservableObject {
         
         self.sort()
         self.dataStore()
+        
+        self.sendNotification(id: self.ToDoList.count - 1)
     }
     
     func edit(id: Int, data: SingleToDo) {
+        self.withdrawNotification(id: id)
+        
         self.ToDoList[id].title = data.title
         self.ToDoList[id].duedate = data.duedate
         self.ToDoList[id].isChecked = false
         
         self.sort()
         self.dataStore()
+        
+        self.sendNotification(id: id)
+    }
+    
+    func sendNotification(id: Int) {
+        notificationContent.title = self.ToDoList[id].title // 通知的标题
+        notificationContent.sound = UNNotificationSound.default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: self.ToDoList[id].duedate.timeIntervalSinceNow, repeats: false) // 通知触发器：在时间间隔 self.ToDoList[id].duedate.timeIntervalSinceNow 之后触发
+        let request = UNNotificationRequest(identifier: self.ToDoList[id].title + self.ToDoList[id].duedate.description, content: notificationContent, trigger: trigger) // identifier 是这个通知的 id，方便撤回通知等后续操作
+        
+        UNUserNotificationCenter.current().add(request)
+    }
+    
+    func withdrawNotification(id: Int) {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [self.ToDoList[id].title + self.ToDoList[id].duedate.description]) // 这个方法只能撤回已经发送到通知中心中的通知，无法撤回还没发到通知中心的通知
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [self.ToDoList[id].title + self.ToDoList[id].duedate.description]) // 撤回还未发到通知中心的通知
     }
     
     func sort() {
@@ -68,6 +93,7 @@ class ToDo: ObservableObject {
     }
     
     func delete(id: Int) {
+        self.withdrawNotification(id: id)
         // self.ToDoList.remove(at: id) // 这里不能直接 remove，因为会使数组数量减小，由于 swift 视图刷新机制不是全局刷新，故会导致报错
         self.ToDoList[id].deleted = true
         self.sort()
